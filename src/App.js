@@ -1,23 +1,44 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import debounce from "lodash/debounce";
+
+const fetchSuggestionFromApi = async (query) => {
+  if (!query) return [];
+  try {
+    const response = await fetch(
+      `https://api.github.com/search/issues?q=${query}`
+    );
+    const data = await response.json();
+    return data.items.map((item) => item.title);
+  } catch(error) {
+    console.log(`Error fetching data: ${error}`)
+    return [];
+  }
+};
 
 function App() {
+  const [suggestion, setSuggestion] = useState([]);
+  const [query, setQuery] = useState("");
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await fetchSuggestionFromApi(query);
+      setSuggestion(result);
+    };
+    fetchData();
+  }, [query]);
+
+  const onInput = (e) => {
+    setQuery(e?.target?.value);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <input type="text" onInput={debounce(onInput, 500)} />
+      <ul>
+        {suggestion.map((item, idx) => (
+          <li key={idx}>{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }
